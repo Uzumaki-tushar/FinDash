@@ -1,12 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../store/useStore';
-import { Search, Plus, Filter, Trash2, ShieldAlert } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, ShieldAlert, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export default function TransactionsTable() {
   const { transactions, deleteTransaction, role, addTransaction } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('All');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newDate, setNewDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [newCategory, setNewCategory] = useState('');
+  const [newType, setNewType] = useState('Expense');
+  const [newAmount, setNewAmount] = useState('');
 
   const filteredData = useMemo(() => {
     return transactions.filter(t => {
@@ -16,14 +22,22 @@ export default function TransactionsTable() {
     });
   }, [transactions, searchTerm, filterType]);
 
-  const handleAddDemo = () => {
+  const handleOpenModal = () => {
     if (role !== 'Admin') return;
+    setIsModalOpen(true);
+  };
+
+  const handleSaveTransaction = () => {
+    if (!newDate || !newCategory || !newAmount) return;
     addTransaction({
-      date: new Date().toISOString().split('T')[0],
-      amount: Math.floor(Math.random() * 500) + 10,
-      category: ['Coffee', 'Shopping', 'Transport', 'Utilities', 'Bonus'][Math.floor(Math.random() * 5)],
-      type: Math.random() > 0.5 ? 'Income' : 'Expense'
+      date: newDate,
+      category: newCategory,
+      type: newType,
+      amount: parseFloat(newAmount)
     });
+    setNewCategory('');
+    setNewAmount('');
+    setIsModalOpen(false);
   };
 
   return (
@@ -59,7 +73,7 @@ export default function TransactionsTable() {
           
           <div className="relative group">
             <button
-              onClick={handleAddDemo}
+              onClick={handleOpenModal}
               disabled={role !== 'Admin'}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all shadow-sm",
@@ -147,6 +161,102 @@ export default function TransactionsTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Add Transaction Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-background rounded-xl p-6 w-full max-w-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Add New Transaction</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Type</label>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setNewType('Expense')}
+                    className={cn(
+                      "flex-1 py-2 text-sm rounded-lg border font-medium transition-colors", 
+                      newType === 'Expense' ? "bg-rose-500/10 text-rose-500 border-rose-500/30" : "bg-background text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    Expense
+                  </button>
+                  <button 
+                    onClick={() => setNewType('Income')}
+                    className={cn(
+                      "flex-1 py-2 text-sm rounded-lg border font-medium transition-colors", 
+                      newType === 'Income' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-background text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    Income
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Date</label>
+                <input 
+                  type="date" 
+                  max={new Date().toISOString().split('T')[0]}
+                  value={newDate} 
+                  onChange={e => setNewDate(e.target.value)} 
+                  className="w-full p-2.5 text-sm rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  style={{ colorScheme: document.documentElement?.classList.contains('dark') ? 'dark' : 'light' }}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Category</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Groceries, Salary, Utilities" 
+                  value={newCategory} 
+                  onChange={e => setNewCategory(e.target.value)} 
+                  className="w-full p-2.5 text-sm rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Amount ($)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00" 
+                  value={newAmount} 
+                  onChange={e => setNewAmount(e.target.value)} 
+                  className="w-full p-2.5 text-sm rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  onKeyDown={e => e.key === 'Enter' && handleSaveTransaction()}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hover:bg-muted rounded-lg"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveTransaction}
+                disabled={!newDate || !newCategory || !newAmount}
+                className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

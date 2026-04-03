@@ -2,6 +2,8 @@
   <h1>💰 FinDash</h1>
   <p>A modern, responsive Finance Dashboard UI built to handle robust state, role-based controls, and beautiful visual analytics.</p>
 
+  <h3>🚀 <a href="https://fin-dash-lime.vercel.app/">View Live Demo</a></h3>
+
   <!-- Badges -->
   <p>
     <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
